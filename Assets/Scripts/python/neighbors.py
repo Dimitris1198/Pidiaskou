@@ -17,10 +17,7 @@ def main():
         to_np = np.array(cords)
         kmeans = KMeans(n_clusters=3, random_state=0, n_init="auto").fit(to_np)
         
-        with open('example.txt', 'a') as file:
-            file.write(str(kmeans.cluster_centers_))
-        
-        sys.stdout.write(json.dumps(kmeans.cluster_centers_.tolist()))
+        sys.stdout.write(str(json.dumps({"peaks":kmeans.cluster_centers_.tolist()})))
     except Exception as err:
         sys.stdout.write(err)
     

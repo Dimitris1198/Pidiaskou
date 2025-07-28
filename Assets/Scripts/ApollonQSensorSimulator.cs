@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using static IPC;
 
 public class ApollonQSensorSimulator : MonoBehaviour
 {
@@ -33,16 +32,6 @@ public class ApollonQSensorSimulator : MonoBehaviour
     private float prevRa2 = 0;
     private float prevRa3 = 0;
 
-    [Serializable]
-    public class Vector3ListWrapper
-    {
-        public List<Vector3> positions;
-
-        public Vector3ListWrapper(List<Vector3> list)
-        {
-            positions = list;
-        }
-    }
 
     void Start()
     {
@@ -434,12 +423,14 @@ public class ApollonQSensorSimulator : MonoBehaviour
             }
         }
         Debug.Log(cords.ToString());
-        string jsonWrapped = JsonUtility.ToJson(new Vector3ListWrapper(cords));
+        string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(cords));
         IPC ipc = new IPC("neighbors");
         ipc.Start();
         ipc.Write(jsonWrapped);
         string res = ipc.Read();
         Debug.Log(res);
+        PeaksDTO output = JsonUtility.FromJson<PeaksDTO>(res);
+        Debug.Log(output.peaks);
         ipc.Wait();
         // ipc.End();
         float avgDistance = totalDistance / (gridRows * gridCols);
