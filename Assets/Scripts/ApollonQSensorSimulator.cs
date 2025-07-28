@@ -1,7 +1,10 @@
 using System;
+
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using static IPC;
 
 public class ApollonQSensorSimulator : MonoBehaviour
 {
@@ -29,6 +32,17 @@ public class ApollonQSensorSimulator : MonoBehaviour
     private float prevRa1 = 0;
     private float prevRa2 = 0;
     private float prevRa3 = 0;
+
+    [Serializable]
+    public class Vector3ListWrapper
+    {
+        public List<Vector3> positions;
+
+        public Vector3ListWrapper(List<Vector3> list)
+        {
+            positions = list;
+        }
+    }
 
     void Start()
     {
@@ -67,7 +81,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
         List<float> hits = new List<float>();
 
-        // The main cone direction = 45° away from vertical
+        // The main cone direction = 45ï¿½ away from vertical
         Vector3 mainDirection = Quaternion.Euler(45, 0, 0) * -transform.up;
 
         for (int i = 0; i < raysPerCircle; i++)
@@ -135,7 +149,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         }
         else
         {
-           
+
             if (rd1Valid)
             {
                 rd1 = hits.Count > 0 ? Mathf.Clamp(hits[0] + SampleGaussian(0, radarNoiseStdDevMM), 0, maxRangeMM) : prevRd1;
@@ -185,7 +199,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
             if (rd3Valid) radarPeaks++;
         }
 
-   
+
         List<float> radarDistances = new List<float> { rd1, rd2, rd3 };
         List<float> radarAmplitudes = new List<float> { ra1, ra2, ra3 };
 
@@ -290,7 +304,6 @@ public class ApollonQSensorSimulator : MonoBehaviour
             formatted_log_date = formattedLogDate
         };
     }
-
     void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
@@ -369,7 +382,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         float binHeight = 1.0f;
         float wallThickness = 0.10f;
 
-        int rayCount = 25;
+        int rayCount = 256;
         int gridRows = Mathf.CeilToInt(Mathf.Sqrt(rayCount));
         int gridCols = gridRows;
 
@@ -386,6 +399,10 @@ public class ApollonQSensorSimulator : MonoBehaviour
         float maxRayDistance = binHeight;
         float totalDistance = 0;
 
+        List<Vector3> cords = new List<Vector3>();
+
+
+
         for (int i = 0; i < gridRows; i++)
         {
             for (int j = 0; j < gridCols; j++)
@@ -396,6 +413,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
                 float x = Mathf.Lerp(xStart, xEnd, u);
                 float z = Mathf.Lerp(zStart, zEnd, v);
 
+
                 Vector3 local = new Vector3(x, 0f, z);
                 Vector3 origin = binTransform.TransformPoint(local + new Vector3(0, binHeight, 0));
 
@@ -404,6 +422,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
                 if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance))
                 {
                     totalDistance += hit.distance;
+                    cords.Add(hit.point);
                     Debug.DrawLine(origin, hit.point, Color.green, 0.5f);
                 }
                 else
@@ -414,7 +433,15 @@ public class ApollonQSensorSimulator : MonoBehaviour
                 }
             }
         }
-
+        Debug.Log(cords.ToString());
+        string jsonWrapped = JsonUtility.ToJson(new Vector3ListWrapper(cords));
+        IPC ipc = new IPC("neighbors");
+        ipc.Start();
+        ipc.Write(jsonWrapped);
+        string res = ipc.Read();
+        Debug.Log(res);
+        ipc.Wait();
+        // ipc.End();
         float avgDistance = totalDistance / (gridRows * gridCols);
         float fillFraction = 1.0f - Mathf.Clamp01(avgDistance / binHeight);
 

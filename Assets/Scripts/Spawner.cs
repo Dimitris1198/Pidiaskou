@@ -71,7 +71,7 @@ public class Spawner : MonoBehaviour
 
     void Update()
     {
-        Debug.Log("Running");
+      //  Debug.Log("Running");
         if (sensorSim == null) sensorSim = GameObject.Find("Bin").GetComponentInChildren<ApollonQSensorSimulator>();
         simulatedTime += Time.deltaTime * timeSpeed;
 
