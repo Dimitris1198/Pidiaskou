@@ -113,7 +113,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         if (selectedOption > 0)
         {
 
-            Debug.Log($"Sending data to python IPC (SNAKE)");
+            Debug.Log("Sending data to python IPC (SNAKE)");
             Debug.Log("Selected method:" + _clusterMethdos[selectedOption - 1]);
             string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(clusteredHits));
 
@@ -463,32 +463,51 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
                 if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance))
                 {
-                    totalDistance += hit.distance;
+                    // totalDistance += hit.distance;
                     cords.Add(hit.point);
                     Debug.DrawLine(origin, hit.point, Color.green, 0.5f);
                 }
                 else
                 {
-                    totalDistance += maxRayDistance;
+                    // totalDistance += maxRayDistance;
                     Vector3 end = origin + Vector3.down * maxRayDistance;
                     Debug.DrawLine(origin, end, Color.red, 0.5f);
                 }
             }
         }
-        // string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(cords));
-        // IPC ipc = new IPC("neighbors");
-        // ipc.Start();
-        // ipc.Write(jsonWrapped);
-        // string res = ipc.Read();
+        string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(cords));
+        Debug.Log("Sending data to python IPC (SNAKE)");
+        IPC ipc = new IPC("clustering");
+        ipc.Start();
+        ipc.Write(jsonWrapped);
+        string res = ipc.Read();
 
-        // PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
+        PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
 
-        // ipc.Wait();
+        ipc.Wait();
+        Debug.Log("Receved data from python IPC (SNAKE)");
 
+        var peaks = output.peaks;
 
-        // ipc.End();
+        Vector3 rd1Vec = new Vector3(peaks[0][0], peaks[0][1], peaks[0][2]);
+        Vector3 rd2Vec = new Vector3(peaks[1][0], peaks[1][1], peaks[1][2]);
+        Vector3 rd3Vec = new Vector3(peaks[2][0], peaks[2][1], peaks[2][2]);
+
+        Vector3 _origin = this.transform.position;
+        float dist1 = Vector3.Distance(rd1Vec, _origin) * 1000f;
+        float dist2 = Vector3.Distance(rd2Vec, _origin) * 1000f;
+        float dist3 = Vector3.Distance(rd3Vec, _origin) * 1000f;
+
+        // Debug.Log(dist1 + dist2 + dist3);
+        totalDistance += (dist1 + dist2 + dist3) / 3;
+
         float avgDistance = totalDistance / (gridRows * gridCols);
+
+        Debug.Log(avgDistance);
+
         float fillFraction = 1.0f - Mathf.Clamp01(avgDistance / binHeight);
+
+        Debug.Log(fillFraction);
 
         Debug.Log($"[ApollonQSensorSimulator] Avg hit distance: {avgDistance:F3}m | Fill: {fillFraction:F2}");
         return fillFraction;
