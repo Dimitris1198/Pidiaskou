@@ -12,7 +12,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
     public float maxRangeMM = 1400f;
     public float containerHeightMM = 1400f;
     public float fovDegrees = 40f;
-    public int raysPerCircle = 32;
+    public int raysPerCircle = 256;
     public float radarNoiseStdDevMM = 20f;
     public float tofNoiseStdDevMM = 5f;
     public int sensorId = 106;
@@ -65,11 +65,12 @@ public class ApollonQSensorSimulator : MonoBehaviour
         Debug.Log("Measurement saved to CSV:\n" + row);
     }
 
-    public ApollonQMeasurement PerformSensorScan()
+    public ApollonQMeasurement PerformSensorScan(int option = 1)
     {
         lastRayDirs.Clear();
 
         List<float> hits = new List<float>();
+        List<Vector3> clusteredHits = new List<Vector3>();
 
         // The main cone direction = 45� away from vertical
         Vector3 mainDirection = Quaternion.Euler(45, 0, 0) * -transform.up;
@@ -81,8 +82,40 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
             if (Physics.Raycast(transform.position, dir, out RaycastHit hit, maxRangeMM / 1000f))
             {
-                hits.Add(hit.distance * 1000f);
+                switch (option)
+                {
+                    case 0:
+                        hits.Add(hit.distance * 1000f);
+                        break;
+                    case 1:
+                        clusteredHits.Add(hit.point);
+                        break;
+                }
+
             }
+        }
+
+        if (option == 1)
+        {
+            string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(clusteredHits));
+            IPC ipc = new IPC("clustering");
+            ipc.Start();
+            ipc.Write(jsonWrapped);
+            string res = ipc.Read();
+            PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
+            ipc.Wait();
+
+            var peaks = output.peaks;
+
+            Vector3 rd1Vec = new Vector3(peaks[0][0], peaks[0][1], peaks[0][2]);
+            Vector3 rd2Vec = new Vector3(peaks[1][0], peaks[1][1], peaks[1][2]);
+            Vector3 rd3Vec = new Vector3(peaks[2][0], peaks[2][1], peaks[2][2]);
+
+            Vector3 origin = this.transform.position;
+            hits.Add(Vector3.Distance(rd1Vec, origin) * 1000f);
+            hits.Add(Vector3.Distance(rd2Vec, origin) * 1000f);
+            hits.Add(Vector3.Distance(rd3Vec, origin) * 1000f);
+
         }
 
         float tofDistance = hits.Count > 0 ? Average(hits) : maxRangeMM;
@@ -423,16 +456,15 @@ public class ApollonQSensorSimulator : MonoBehaviour
                 }
             }
         }
-        Debug.Log(cords.ToString());
-        string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(cords));
-        IPC ipc = new IPC("neighbors");
-        ipc.Start();
-        ipc.Write(jsonWrapped);
-        string res = ipc.Read();
+        // string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(cords));
+        // IPC ipc = new IPC("neighbors");
+        // ipc.Start();
+        // ipc.Write(jsonWrapped);
+        // string res = ipc.Read();
 
-        PeaksDTO output =JsonConvert.DeserializeObject<PeaksDTO>(res);
-    
-        ipc.Wait();
+        // PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
+
+        // ipc.Wait();
 
 
         // ipc.End();
