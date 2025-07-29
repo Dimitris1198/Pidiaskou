@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public class ApollonQSensorSimulator : MonoBehaviour
 {
@@ -428,10 +429,12 @@ public class ApollonQSensorSimulator : MonoBehaviour
         ipc.Start();
         ipc.Write(jsonWrapped);
         string res = ipc.Read();
-        Debug.Log(res);
-        PeaksDTO output = JsonUtility.FromJson<PeaksDTO>(res);
-        Debug.Log(output.peaks);
+
+        PeaksDTO output =JsonConvert.DeserializeObject<PeaksDTO>(res);
+    
         ipc.Wait();
+
+
         // ipc.End();
         float avgDistance = totalDistance / (gridRows * gridCols);
         float fillFraction = 1.0f - Mathf.Clamp01(avgDistance / binHeight);

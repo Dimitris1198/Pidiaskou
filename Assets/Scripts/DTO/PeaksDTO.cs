@@ -2,10 +2,13 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[Serializable]
-public record PeaksDTO
+[System.Serializable]
+public class PeaksDTO
 {
-    public string peaks { set; get; }
+    public List<List<float>> peaks { set; get; }
 
-
+    public PeaksDTO(List<List<float>> data)
+    {
+        peaks = data;
+    }
 }

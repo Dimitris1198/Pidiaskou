@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 
-[Serializable]
+[System.Serializable]
 public class PositionsDTO
 {
     public List<Vector3> positions;
