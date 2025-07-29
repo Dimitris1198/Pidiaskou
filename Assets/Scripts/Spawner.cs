@@ -71,7 +71,7 @@ public class Spawner : MonoBehaviour
 
     void Update()
     {
-      //  Debug.Log("Running");
+        //  Debug.Log("Running");
         if (sensorSim == null) sensorSim = GameObject.Find("Bin").GetComponentInChildren<ApollonQSensorSimulator>();
         simulatedTime += Time.deltaTime * timeSpeed;
 
@@ -79,13 +79,13 @@ public class Spawner : MonoBehaviour
 
         int currentMinute = Mathf.FloorToInt(simulatedTime % 60);
 
-      
+
         if (simulatedTime >= 1440f)
         {
             simulatedTime -= 1440f;
             simulatedDate = simulatedDate.AddDays(1);
-            cleanedToday = false; 
-                           
+            cleanedToday = false;
+
         }
 
         string timeString = $"{currentHour:D2}:{currentMinute:D2}";
@@ -109,7 +109,8 @@ public class Spawner : MonoBehaviour
         //      CleanTrash();
         //      cleanedToday = true;
         //   }
-        if (currentHour == 5 || currentHour ==  10 || currentHour == 15 || currentHour == 20 || currentHour == 0 )
+        //  || currentHour ==  10 || currentHour == 15 || currentHour == 20 || currentHour == 0 
+        if (currentHour == 5)
         {
             CleanTrash();
             cleanedToday = true;
@@ -127,13 +128,13 @@ public class Spawner : MonoBehaviour
             float adjustedSpawnDelay = Random.Range(minSpawnTime, maxSpawnTime)
                                        / Mathf.Max(rushMultiplier, 0.01f);
 
-       // Debug.Log($"[SPAWN LOOP] Hour={currentHour} RushMultiplier={rushMultiplier:F2}. Waiting {adjustedSpawnDelay:F2}s before next spawn.");
+            // Debug.Log($"[SPAWN LOOP] Hour={currentHour} RushMultiplier={rushMultiplier:F2}. Waiting {adjustedSpawnDelay:F2}s before next spawn.");
 
             yield return new WaitForSeconds(adjustedSpawnDelay);
 
             if (Random.value > rushMultiplier)
             {
-             // Debug.Log($"[SPAWN SKIPPED] Current hour {currentHour} has low rush ({rushMultiplier:F2}). Skipping spawn this cycle.");
+                // Debug.Log($"[SPAWN SKIPPED] Current hour {currentHour} has low rush ({rushMultiplier:F2}). Skipping spawn this cycle.");
                 continue;
             }
 
@@ -146,7 +147,7 @@ public class Spawner : MonoBehaviour
         GameObject prefab = null;
         bool useFixed = Random.value > 0.5f;
 
-        if (useFixed && fixedSizePrefabs.Count > 0 )
+        if (useFixed && fixedSizePrefabs.Count > 0)
         {
             prefab = fixedSizePrefabs[Random.Range(0, fixedSizePrefabs.Count)];
         }
@@ -156,7 +157,7 @@ public class Spawner : MonoBehaviour
         }
         else
         {
-          Debug.LogWarning("[SPAWN FAILED] No prefabs to spawn.");
+            Debug.LogWarning("[SPAWN FAILED] No prefabs to spawn.");
             return;
         }
 
@@ -174,9 +175,9 @@ public class Spawner : MonoBehaviour
             t.gameObject.tag = "Trash";
             t.gameObject.layer = LayerMask.NameToLayer("Ground");
         }
-    //    obj.AddComponent<MidAirCheckVisualizer>();
-     //   obj.GetComponent<MidAirCheckVisualizer>().rayLength = cone_processor.downRayDistance;
-       // obj.GetComponent<MidAirCheckVisualizer>().binTransform = cone_processor.binTransform;
+        //    obj.AddComponent<MidAirCheckVisualizer>();
+        //   obj.GetComponent<MidAirCheckVisualizer>().rayLength = cone_processor.downRayDistance;
+        // obj.GetComponent<MidAirCheckVisualizer>().binTransform = cone_processor.binTransform;
         string spawnedName = prefab.name;
 
         if (!useFixed)
@@ -186,9 +187,9 @@ public class Spawner : MonoBehaviour
                 Random.Range(minScale.y, maxScale.y) * obj.transform.localScale.x,
                 Random.Range(minScale.z, maxScale.z) * obj.transform.localScale.x
             );
-       
+
             obj.transform.localScale = scale;
-          
+
             // Debug.Log($"[SPAWNED] Random-scale prefab \"{spawnedName}\" at {spawnPosition} with scale {scale}");
         }
         else
@@ -209,7 +210,7 @@ public class Spawner : MonoBehaviour
             count++;
         }
 
-       // Debug.Log($"[CLEANUP] Deleted {count} 'trash'-tagged objects at 05:00 on {simulatedDate:yyyy-MM-dd}.");
+        // Debug.Log($"[CLEANUP] Deleted {count} 'trash'-tagged objects at 05:00 on {simulatedDate:yyyy-MM-dd}.");
     }
 
     Vector3 GetRandomPointInCollider(Collider col)
@@ -224,7 +225,7 @@ public class Spawner : MonoBehaviour
                 Random.Range(-size.z, size.z)
             );
 
-         //  // Debug.Log($"[RANDOM POINT] BoxCollider random point: {randomPoint}");
+            //  // Debug.Log($"[RANDOM POINT] BoxCollider random point: {randomPoint}");
             return randomPoint;
         }
         else if (col is SphereCollider sphere)
@@ -232,12 +233,12 @@ public class Spawner : MonoBehaviour
             Vector3 center = sphere.center + col.transform.position;
             Vector3 randomPoint = center + Random.insideUnitSphere * sphere.radius;
 
-       //    // Debug.Log($"[RANDOM POINT] SphereCollider random point: {randomPoint}");
+            //    // Debug.Log($"[RANDOM POINT] SphereCollider random point: {randomPoint}");
             return randomPoint;
         }
         else
         {
-     //       Debug.LogWarning("[RANDOM POINT] Unsupported collider type. Returning collider position.");
+            //       Debug.LogWarning("[RANDOM POINT] Unsupported collider type. Returning collider position.");
             return col.transform.position;
         }
     }

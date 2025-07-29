@@ -10,7 +10,7 @@ public class IPC
     public IPC(string scriptName)
     {
         proc = new System.Diagnostics.Process();
-        proc.StartInfo.WorkingDirectory = "C:\\Users\\manol\\Desktop\\Pidiaskou\\Assets\\Scripts\\python";
+        proc.StartInfo.WorkingDirectory = Path.Join(Path.Join(Path.Join(Directory.GetCurrentDirectory(), "Assets"), "Scripts"), "Python");
         proc.StartInfo.FileName = "python.exe";
         proc.StartInfo.Arguments = $"{scriptName}.py";
         proc.StartInfo.RedirectStandardInput = true;
