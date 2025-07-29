@@ -17,6 +17,7 @@ public class IPC
         proc.StartInfo.RedirectStandardOutput = true;
         proc.StartInfo.RedirectStandardError = true;
         proc.StartInfo.UseShellExecute = false;
+        proc.StartInfo.CreateNoWindow = true;
     }
 
     public void Start()

@@ -19,6 +19,15 @@ public class ApollonQSensorSimulator : MonoBehaviour
     public Transform binTransform;
     public Spawner spawner;
 
+    public enum ClusteringMethods
+    {
+        NoCluster = 0, KMeans = 1, BiscectKMeans = 2, Birch = 3
+    }
+
+    [Header("Clustering method")]
+    public ClusteringMethods clusterMethod;
+
+
     [Header("CSV Export")]
     public string csvFileName = "ApollonQ_Log.csv";
 
@@ -65,7 +74,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         Debug.Log("Measurement saved to CSV:\n" + row);
     }
 
-    public ApollonQMeasurement PerformSensorScan(int option = 1)
+    public ApollonQMeasurement PerformSensorScan()
     {
         lastRayDirs.Clear();
 
@@ -74,7 +83,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
         // The main cone direction = 45� away from vertical
         Vector3 mainDirection = Quaternion.Euler(45, 0, 0) * -transform.up;
-
+        int selectedOption = (int)clusterMethod;
         for (int i = 0; i < raysPerCircle; i++)
         {
             Vector3 dir = RandomConeDirection(mainDirection, fovDegrees);
@@ -82,29 +91,39 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
             if (Physics.Raycast(transform.position, dir, out RaycastHit hit, maxRangeMM / 1000f))
             {
-                switch (option)
+
+                if (selectedOption > 0)
                 {
-                    case 0:
-                        hits.Add(hit.distance * 1000f);
-                        break;
-                    case 1:
-                        clusteredHits.Add(hit.point);
-                        break;
+                    clusteredHits.Add(hit.point);
+                }
+                else
+                {
+                    hits.Add(hit.distance * 1000f);
                 }
 
             }
         }
-
-        if (option == 1)
+        List<string> _clusterMethdos = new List<string>()
         {
+            "clustering","birch_clustering","biscecting_clustering"
+        };
+
+
+
+        if (selectedOption > 0)
+        {
+
+            Debug.Log($"Sending data to python IPC (SNAKE)");
+            Debug.Log("Selected method:" + _clusterMethdos[selectedOption - 1]);
             string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(clusteredHits));
-            IPC ipc = new IPC("clustering");
+
+            IPC ipc = new IPC(_clusterMethdos[selectedOption - 1]);
             ipc.Start();
             ipc.Write(jsonWrapped);
             string res = ipc.Read();
             PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
             ipc.Wait();
-
+            Debug.Log("Receved data from python IPC (SNAKE)");
             var peaks = output.peaks;
 
             Vector3 rd1Vec = new Vector3(peaks[0][0], peaks[0][1], peaks[0][2]);
