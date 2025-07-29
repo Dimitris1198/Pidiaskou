@@ -25,7 +25,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
     }
 
     [Header("Clustering method")]
-    public ClusteringMethods clusterMethod;
+    public ClusteringMethods clusterMethod = ClusteringMethods.KMeans;
 
 
     [Header("CSV Export")]
