@@ -121,21 +121,25 @@ public class ApollonQSensorSimulator : MonoBehaviour
             ipc.Start();
             ipc.Write(jsonWrapped);
             string res = ipc.Read();
-            Debug.Log(res);
-            PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
-            ipc.Wait();
-            Debug.Log("Receved data from python IPC (SNAKE)");
-            var peaks = output.peaks;
 
-            Vector3 rd1Vec = new Vector3(peaks[0][0], peaks[0][1], peaks[0][2]);
-            Vector3 rd2Vec = new Vector3(peaks[1][0], peaks[1][1], peaks[1][2]);
-            Vector3 rd3Vec = new Vector3(peaks[2][0], peaks[2][1], peaks[2][2]);
+            if (!res.Contains("error"))
+            {
+                Debug.Log("Return data: " + res);
+                PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
+                ipc.Wait();
+                Debug.Log("Receved data from python IPC (SNAKE)");
+                var peaks = output.peaks;
 
-            Vector3 origin = this.transform.position;
-            hits.Add(Vector3.Distance(rd1Vec, origin) * 1000f);
-            hits.Add(Vector3.Distance(rd2Vec, origin) * 1000f);
-            hits.Add(Vector3.Distance(rd3Vec, origin) * 1000f);
+                Vector3 origin = this.transform.position;
+                foreach (List<float> peak in peaks)
+                {
+                    Vector3 rdVec = new Vector3(peak[0], peak[1], peak[2]);
+                    hits.Add(Vector3.Distance(rdVec, origin) * 1000f);
+                }
 
+
+                hits.Sort();
+            }
         }
 
         float tofDistance = hits.Count > 0 ? Average(hits) : maxRangeMM;

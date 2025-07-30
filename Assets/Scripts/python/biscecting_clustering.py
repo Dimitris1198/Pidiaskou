@@ -11,6 +11,18 @@ except ImportError as e:
     print(f"Name: {e.name}")
     sys.exit()
 
+def main_centroid(arr):
+    center = np.mean(arr,axis=0)
+    total_distance = 0
+    for point in arr:
+        total_distance +=np.linalg.norm(point - center)
+    avg_dist = total_distance/len(arr)
+    return {
+        'center':center,
+        "avg_dist":avg_dist
+    }
+
+
 
 def optimal_k(x,kmax):
     sil = []
@@ -31,9 +43,15 @@ def main():
         for cord in parsed_data['positions']:
             cords.append([cord['x'],cord['y'],cord['z']])
         to_np = np.array(cords)
-        optim_k = optimal_k(to_np,3)
-        kmeans = BisectingKMeans(n_clusters=optim_k['k']).fit(to_np)
-        sys.stdout.write(json.dumps({"peaks":kmeans.cluster_centers_.tolist()}))
+        centroid = main_centroid(to_np)
+        if centroid['avg_dist']>0.3:
+            optim_k = optimal_k(to_np,3)
+            kmeans = BisectingKMeans(n_clusters=optim_k['k']).fit(to_np)
+            sys.stdout.write(json.dumps({"peaks":kmeans.cluster_centers_.tolist()}))
+            return
+        else:
+            sys.stdout.write(json.dumps({"peaks":[centroid['center'].tolist()]}))
+
     except Exception as err:
         sys.stdout.write(json.dumps({"error":str(err)}))
 
