@@ -25,7 +25,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
     }
 
     [Header("Clustering method")]
-    public ClusteringMethods clusterMethod = ClusteringMethods.KMeans;
+    public ClusteringMethods clusterMethod = ClusteringMethods.BiscectKMeans;
 
 
     [Header("CSV Export")]
@@ -105,7 +105,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         }
         List<string> _clusterMethdos = new List<string>()
         {
-            "clustering","birch_clustering","biscecting_clustering"
+            "clustering","biscecting_clustering",
         };
 
 
@@ -121,6 +121,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
             ipc.Start();
             ipc.Write(jsonWrapped);
             string res = ipc.Read();
+            Debug.Log(res);
             PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
             ipc.Wait();
             Debug.Log("Receved data from python IPC (SNAKE)");
