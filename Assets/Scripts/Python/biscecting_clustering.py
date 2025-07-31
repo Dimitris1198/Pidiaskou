@@ -5,9 +5,8 @@ import numpy as np
 try:
     from sklearn.metrics import silhouette_score
     from sklearn.cluster import BisectingKMeans
-except ImportError as e:
-    print("An ImportError occurred.")
-    print(f"Name: {e.name}")
+except ImportError as err:
+    sys.stdout.write(json.dumps({"error":str(err)}))
     sys.exit()
 
 def main_centroid(arr):
@@ -20,7 +19,6 @@ def main_centroid(arr):
         'center':center,
         "avg_dist":avg_dist
     }
-
 
 def optimal_k(x,kmax):
     sil = []
