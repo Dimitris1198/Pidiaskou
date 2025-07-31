@@ -1,8 +1,7 @@
-
-
 import sys
 import json
 import numpy as np
+
 try:
     from sklearn.metrics import silhouette_score
     from sklearn.cluster import BisectingKMeans
@@ -21,7 +20,6 @@ def main_centroid(arr):
         'center':center,
         "avg_dist":avg_dist
     }
-
 
 
 def optimal_k(x,kmax):
@@ -45,7 +43,7 @@ def main():
         to_np = np.array(cords)
         centroid = main_centroid(to_np)
         if centroid['avg_dist']>0.3:
-            optim_k = optimal_k(to_np,3)
+            optim_k = optimal_k(to_np,parsed_data['maxClusters'])
             kmeans = BisectingKMeans(n_clusters=optim_k['k']).fit(to_np)
             sys.stdout.write(json.dumps({"peaks":kmeans.cluster_centers_.tolist()}))
             return
@@ -55,5 +53,4 @@ def main():
     except Exception as err:
         sys.stdout.write(json.dumps({"error":str(err)}))
 
-    
 main()

@@ -24,8 +24,17 @@ public class ApollonQSensorSimulator : MonoBehaviour
         NoCluster = 0, KMeans = 1, BiscectKMeans = 2, Birch = 3
     }
 
-    [Header("Clustering method")]
+    [Header("Clustering method (IPC) 🐍")]
     public ClusteringMethods clusterMethod = ClusteringMethods.BiscectKMeans;
+
+    [Header("Compute fill rate using clustering methods (IPC) 🐍")]
+    public bool computerFillWithClusters = true;
+
+
+    private List<string> _clusterMethdos = new List<string>()
+        {
+            "clustering","biscecting_clustering",
+        };
 
 
     [Header("CSV Export")]
@@ -103,19 +112,14 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
             }
         }
-        List<string> _clusterMethdos = new List<string>()
-        {
-            "clustering","biscecting_clustering",
-        };
-
 
 
         if (selectedOption > 0)
         {
 
-            Debug.Log("Sending data to python IPC (SNAKE)");
+            Debug.Log("Sending data to python IPC (🐍)");
             Debug.Log("Selected method:" + _clusterMethdos[selectedOption - 1]);
-            string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(clusteredHits));
+            string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(3, clusteredHits));
 
             IPC ipc = new IPC(_clusterMethdos[selectedOption - 1]);
             ipc.Start();
@@ -127,7 +131,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
                 Debug.Log("Return data: " + res);
                 PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
                 ipc.Wait();
-                Debug.Log("Receved data from python IPC (SNAKE)");
+                Debug.Log("Receved data from python IPC (🐍)");
                 var peaks = output.peaks;
 
                 Vector3 origin = this.transform.position;
@@ -427,6 +431,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         float binWidth = 1.1f;
         float binDepth = 0.65f;
         float binHeight = 1.0f;
+        float sensorHeight = 0.0305f;
         float wallThickness = 0.10f;
 
         int rayCount = raysPerCircle;
@@ -446,7 +451,7 @@ public class ApollonQSensorSimulator : MonoBehaviour
         float maxRayDistance = binHeight;
         float totalDistance = 0;
 
-
+        List<Vector3> cords = new List<Vector3>();
         for (int i = 0; i < gridRows; i++)
         {
             for (int j = 0; j < gridCols; j++)
@@ -465,26 +470,63 @@ public class ApollonQSensorSimulator : MonoBehaviour
 
                 if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance))
                 {
+                    cords.Add(hit.point);
                     totalDistance += hit.distance;
                     Debug.DrawLine(origin, hit.point, Color.green, 0.5f);
                 }
                 else
                 {
-
                     totalDistance += maxRayDistance;
                     Vector3 end = origin + Vector3.down * maxRayDistance;
                     Debug.DrawLine(origin, end, Color.red, 0.5f);
                 }
             }
         }
+        float fillFraction = 0.0f;
+        float norm = binHeight - sensorHeight;
+        if (computerFillWithClusters)
+        {
+            int selectedOption = (int)clusterMethod;
 
-        float maxHeight = binHeight * rayCount;
+            Debug.Log("Sending data to python IPC (🐍)");
+            Debug.Log("Selected method:" + _clusterMethdos[selectedOption - 1]);
+            string jsonWrapped = JsonUtility.ToJson(new PositionsDTO(8, cords));
+
+            IPC ipc = new IPC(_clusterMethdos[selectedOption - 1]);
+            ipc.Start();
+            ipc.Write(jsonWrapped);
+            string res = ipc.Read();
 
 
-        float fillFraction = binHeight - (totalDistance / maxHeight);
+            if (!res.Contains("error"))
+            {
+                Debug.Log("Return data: " + res);
+                PeaksDTO output = JsonConvert.DeserializeObject<PeaksDTO>(res);
+                ipc.Wait();
+                Debug.Log("Receved data from python IPC (🐍)");
+                var peaks = output.peaks;
 
+                Vector3 origin = this.transform.position;
+                float totalHeightDist = 0.0f;
+                foreach (List<float> peak in peaks)
+                {
 
-        Debug.Log($"[ApollonQSensorSimulator] Fill: {fillFraction:F2}");
-        return fillFraction;
+                    totalHeightDist += peak[1];
+
+                }
+                float avgTotalHeighDist = totalHeightDist / peaks.Count;
+                fillFraction = avgTotalHeighDist / norm;
+            }
+        }
+        else
+        {
+            float maxHeight = binHeight * rayCount;
+            fillFraction = binHeight - (totalDistance / norm);
+        }
+
+        float fillClamped = Mathf.Clamp01(fillFraction);
+
+        Debug.Log($"[ApollonQSensorSimulator] Fill: {fillClamped:F2}");
+        return fillClamped;
     }
 }

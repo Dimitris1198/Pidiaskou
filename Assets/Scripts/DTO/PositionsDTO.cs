@@ -6,10 +6,12 @@ using System.Collections.Generic;
 [System.Serializable]
 public class PositionsDTO
 {
+    public int maxClusters;
     public List<Vector3> positions;
 
-    public PositionsDTO(List<Vector3> data)
+    public PositionsDTO(int clusters, List<Vector3> data)
     {
+        maxClusters = clusters;
         positions = data;
     }
 }
